@@ -1,0 +1,26 @@
+# Mac OS
+.DS_Store
+
+# Node.js (Frontend)
+**/node_modules/
+**/build/
+npm-debug.log
+
+# Java / Gradle (Backend)
+**/.gradle/
+**/build/
+**/bin/
+**/*.class
+**/*.jar
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/venv/
+
+# VS Code / IDEA
+.vscode/
+.idea/
+
+# Docker / Environment
+.env

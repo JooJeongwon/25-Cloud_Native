@@ -1,0 +1,176 @@
+services:
+  # ------------------------------------
+  # 1. Frontend (React + Nginx)
+  # ------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80" # 브라우저 접속용 (http://localhost)
+    networks:
+      - finalexam
+    depends_on:
+      - gateway
+
+  # ------------------------------------
+  # 2. API Gateway (Java)
+  # ------------------------------------
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "9000:9000" # API 테스트용
+    networks:
+      - finalexam
+    depends_on:
+      - movieapi
+      - reviewapi
+      - userapi
+      - verificationapi
+      - badgeapi
+      - redis
+
+  # ------------------------------------
+  # 3. User API (PHP)
+  # ------------------------------------
+  userapi:
+    build: ./userapi
+    container_name: userapi
+    ports:
+      - "8080:80" # 직접 테스트용
+    networks:
+      - finalexam
+    depends_on:
+      - user-mysql
+      - redis
+
+  # ------------------------------------
+  # 4. Java Microservices
+  # ------------------------------------
+  movieapi:
+    build: ./movieapi
+    container_name: movieapi
+    networks:
+      - finalexam
+    # 내부 통신용이므로 ports 제외 (보안)
+    environment:
+      TMDB_API_KEY: ${TMDB_API_KEY}
+
+  reviewapi:
+    build: ./reviewapi
+    container_name: reviewapi
+    networks:
+      - finalexam
+    depends_on:
+      - review-mysql
+
+  badgeapi:
+    build: ./badgeapi
+    container_name: badgeapi
+    networks:
+      - finalexam
+    depends_on:
+      - badge-mysql
+
+  # ------------------------------------
+  # 5. Verification API (Python FastAPI)
+  # ------------------------------------
+  verificationapi:
+    build: ./verificationapi
+    container_name: verificationapi
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    networks:
+      - finalexam
+    depends_on:
+      - verification-mysql
+    environment:
+      DATABASE_URL: "mysql+pymysql://root:password@verification-mysql/verification-mysql"
+      MOVIE_API_BASE_URL: "http://movieapi:8089"
+      INTERNAL_API_KEY: "MY_SUPER_SECRET_MSA_KEY_12345"
+    volumes:
+      - verification-uploads:/app/uploads
+
+  # ------------------------------------
+  # 6. Databases & Cache
+  # ------------------------------------
+  user-mysql:
+    build: ./userapi/init # Dockerfile이 있는 폴더 경로 지정
+    container_name: user-mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - finalexam
+    environment:
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_DATABASE: 'user-mysql'
+      MYSQL_USER: 'user-mysql'
+      MYSQL_PASSWORD: '123456'
+    volumes:
+      - user-mysql-data:/var/lib/mysql
+
+  review-mysql:
+    image: mysql:8.0
+    container_name: review-mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - finalexam
+    environment:
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_DATABASE: 'review-mysql'
+      MYSQL_USER: 'review-mysql'
+      MYSQL_PASSWORD: '123456'
+    volumes:
+      - review-mysql-data:/var/lib/mysql
+
+  verification-mysql:
+    image: mysql:8.0
+    container_name: verification-mysql
+    ports:
+      - "3308:3306"
+    networks:
+      - finalexam
+    environment:
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_DATABASE: 'verification-mysql'
+    volumes:
+      - verification-mysql-data:/var/lib/mysql
+
+  badge-mysql:
+    image: mysql:8.0
+    container_name: badge-mysql
+    ports:
+      - "3309:3306"
+    networks:
+      - finalexam
+    environment:
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_DATABASE: 'badge-mysql'
+    volumes:
+      - badge-mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - finalexam
+    volumes:
+      - redis-data:/data
+
+# 네트워크 정의
+networks:
+  finalexam:
+    driver: bridge
+
+# 볼륨 정의
+volumes:
+  user-mysql-data:
+  review-mysql-data:
+  verification-mysql-data:
+  badge-mysql-data:
+  redis-data:
+  verification-uploads:

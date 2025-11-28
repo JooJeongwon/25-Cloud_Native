@@ -1,0 +1,89 @@
+server:
+  port: 9000
+
+spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowed-origins: "http://localhost" # 배포 시 프론트엔드 도메인으로 변경
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            allowed-headers: "*"
+            allow-credentials: true
+
+      routes:
+        # 1. userapi (PHP Container)
+        - id: userapi_route
+          uri: http://userapi:80
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - RewritePath=/api/auth/(?<segment>.*), /${segment}.php
+
+        # 2. movieapi (Java Container)
+        - id: movieapi_route
+          uri: http://movieapi:8089
+          predicates:
+            - Path=/api/movies/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}
+
+        # 3. reviewapi (Java Container)
+        - id: reviewapi_route
+          uri: http://reviewapi:8013
+          predicates:
+            - Path=/api/reviews/**, /reviews/user/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}
+
+        # 4. verificationapi (Python Container)
+        - id: verificationapi_route
+          uri: http://verificationapi:8000
+          predicates:
+            - Path=/api/verification/**
+          filters:
+            - RewritePath=/api/verification/(?<segment>.*), /api/${segment}
+
+        # 5. verificationapi 이미지 서빙
+        - id: verification_images_route
+          uri: http://verificationapi:8000
+          predicates:
+            - Path=/api/uploads/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}
+
+        # 6. 관리자 목록 조회
+        - id: admin_pending_route
+          uri: http://verificationapi:8000
+          predicates:
+            - Path=/api/admin/pending-verifications
+            - Method=GET
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}
+
+        # 7. 관리자 승인/거절
+        - id: admin_approve_route
+          uri: http://verificationapi:8000
+          predicates:
+            - Path=/api/admin/approve/**, /api/admin/reject/**
+            - Method=PUT
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}
+
+        # 8. badgeapi (Java Container)
+        - id: badgeapi_route
+          uri: http://badgeapi:8082
+          predicates:
+            - Path=/api/badges/**, /badges/user/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /${segment}

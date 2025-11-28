@@ -1,0 +1,55 @@
+{
+  "name": "CN",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  // ⭐️ 1. 이 "runArgs" 속성을 features 위에 추가합니다.
+  "runArgs": [
+    // ⭐️ "cloud_native_finalexam" 네트워크에 Dev Container를 연결
+    "--network=cloud_native_finalexam"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "additionalVersions": "21"  // 👈 VS Code 확장 프로그램은 몰래 21을 사용
+    },
+    /* 버그로 인해 사용x
+    "ghcr.io/devcontainers/features/php:1": {
+      "version": "8.2"
+    */
+    "ghcr.io/devcontainers/features/docker-from-docker:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    // ⭐️ 1. (신규) Node.js 기능 추가 (npx/npm을 위함)
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts" // ⭐️ "lts" (최신 안정 버전) 사용
+    }
+  },
+  "onCreateCommand": "sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository ppa:ondrej/php -y && sudo apt-get update && sudo apt-get install -y php8.2 php8.2-cli php8.2-common php8.2-pdo-mysql php8.2-redis libssl-dev default-libmysqlclient-dev zlib1g-dev",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "DEVSENSE.phptools-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        // ⭐️ 2. (신규) React 개발용 확장 프로그램 추가
+        "dbaeumer.vscode-eslint", // 코드 오류 검사
+        "esbenp.prettier-vscode" // 코드 자동 정렬
+      ]
+    }
+  },
+  "forwardPorts": [
+    8080, // userapi
+    8089, // movieapi
+    8013, // reviewapi
+    8082, // badgeapi
+    9000, // gateway
+    8000  // verificationapi
+  ],
+  "postCreateCommand": "java -version && php -v && docker --version"
+}
